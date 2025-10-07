@@ -201,7 +201,6 @@ function getPetImageFromAPI(pet) {
         if (catImage) return catImage.url;
     }
     
-    // Fallback final para imagens locais
     return getLocalPetImage(pet.name);
 }
 
@@ -216,7 +215,6 @@ function getLocalPetImage(petName) {
     return imageMap[petName] || `https://via.placeholder.com/300x200/4ECDC4/white?text=Pet+${petName}`;
 }
 
-// Funções auxiliares para dados aleatórios
 function getRandomAge() {
     const ages = ["1 ano", "2 anos", "3 anos", "4 anos", "5 anos"];
     return ages[Math.floor(Math.random() * ages.length)];
@@ -238,7 +236,7 @@ function getRandomDistance() {
     return distances[Math.floor(Math.random() * distances.length)];
 }
 
-// FUNÇÕES ORIGINAIS DO SEU CÓDIGO (MANTIDAS)
+
 function displayPets(pets) {
     hideLoading();
     hideError();
@@ -264,7 +262,7 @@ function displayPets(pets) {
         </div>
     `).join('');
     
-    // Armazena pets da API para uso futuro
+
     if (pets[0] && pets[0].reference_image_id) {
         window.apiPets = pets;
     }
@@ -349,3 +347,4 @@ document.addEventListener('DOMContentLoaded', function() {
         displayPets(petsToShow);
     });
 });
+
