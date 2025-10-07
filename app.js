@@ -90,7 +90,6 @@ async function fetchPetsFromAPI(lat, lng) {
             fetchCatImages()
         ]);
 
-        // Armazena imagens em cache
         dogImagesCache = dogImages;
         catImagesCache = catImages;
 
@@ -193,7 +192,6 @@ function getPetImageFromAPI(pet) {
         const dogImage = dogImagesCache.find(img => img.breeds?.[0]?.id === pet.id);
         if (dogImage) return dogImage.url;
     } else {
-        // Para gatos
         if (pet.reference_image_id) {
             return `https://cdn2.thecatapi.com/images/${pet.reference_image_id}.jpg`;
         }
@@ -236,7 +234,6 @@ function getRandomDistance() {
     return distances[Math.floor(Math.random() * distances.length)];
 }
 
-
 function displayPets(pets) {
     hideLoading();
     hideError();
@@ -261,7 +258,6 @@ function displayPets(pets) {
             </button>
         </div>
     `).join('');
-    
 
     if (pets[0] && pets[0].reference_image_id) {
         window.apiPets = pets;
@@ -281,6 +277,83 @@ function openCamera() {
                 alert('Não foi possível acessar a câmera');
             });
     }
+}
+
+function closeCamera() {
+    cameraModal.style.display = 'none';
+    if (video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+    }
+}
+
+function takePhoto() {
+    const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    alert('Foto tirada! Em uma aplicação real, esta foto seria enviada para reportar o pet perdido.');
+    
+    closeCamera();
+}
+
+function adoptPet(petName) {
+    alert(`🎉 Ótima escolha! Você demonstrou interesse em adotar ${petName}. Em uma aplicação real, entraríamos em contato com você!`);
+}
+
+function showLoading() {
+    loadingElement.style.display = 'block';
+    petsElement.innerHTML = '';
+    hideError();
+}
+
+function hideLoading() {
+    loadingElement.style.display = 'none';
+}
+
+function showError(message) {
+    errorElement.querySelector('p').textContent = message;
+    errorElement.style.display = 'block';
+    loadingElement.style.display = 'none';
+    petsElement.innerHTML = '';
+}
+
+function hideError() {
+    errorElement.style.display = 'none';
+}
+
+// Event Listeners
+document.querySelector('.close').addEventListener('click', closeCamera);
+
+document.addEventListener('DOMContentLoaded', function() {
+    getLocation();
+    
+    petTypeSelect.addEventListener('change', function() {
+        const selectedType = this.value;
+        let petsToShow = availablePets;
+        
+        if (window.apiPets && window.apiPets.length > 0) {
+            petsToShow = window.apiPets;
+        }
+        
+        if (selectedType) {
+            petsToShow = petsToShow.filter(pet => pet.type === selectedType);
+        }
+        
+        displayPets(petsToShow);
+    });
+});
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(registration => {
+                console.log('✅ Service Worker registrado com sucesso: ', registration);
+            })
+            .catch(registrationError => {
+                console.log('❌ Falha no registro do Service Worker: ', registrationError);
+            });
+    });
 }
 
 function closeCamera() {
@@ -347,4 +420,5 @@ document.addEventListener('DOMContentLoaded', function() {
         displayPets(petsToShow);
     });
 });
+
 
