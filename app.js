@@ -140,7 +140,7 @@ function getPetImage(type, breed, petName) {
         "Rick": "images/rick-golden.jpg",
         "Lana": "images/lana-frajola.jpg", 
         "Bob": "images/bob-bulldog.jpg",
-        "Lulu": "images/lulu-tricolor.jpg"
+        "Lulu": "images/lulu-gata.jpg"
     };
     
     // Verifica se a imagem existe no mapa, caso contrário usa placeholder
@@ -242,5 +242,6 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+
 
 
