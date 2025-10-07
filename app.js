@@ -135,12 +135,16 @@ function displayPets(pets) {
     `).join('');
 }
 
-function getPetImage(type, breed) {
-    if (type === 'dog') {
-        return `https://images.dog.ceo/breeds/${breed.toLowerCase().split(' ')[0]}/english-setter.jpg`;
-    } else {
-        return `https://cdn2.thecatapi.com/images/${Math.random().toString(36).substr(2, 9)}.jpg`;
-    }
+function getPetImage(type, breed, petName) {
+    const imageMap = {
+        "Rick": "images/rick-golden.jpg",
+        "Lana": "images/lana-frajola.jpg", 
+        "Bob": "images/bob-bulldog.jpg",
+        "Lulu": "images/lulu-tricolor.jpg"
+    };
+    
+    // Verifica se a imagem existe no mapa, caso contrário usa placeholder
+    return imageMap[petName] || `https://via.placeholder.com/300x200/4ECDC4/white?text=Pet+${petName}`;
 }
 
 function openCamera() {
@@ -238,3 +242,4 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+
