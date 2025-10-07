@@ -121,7 +121,7 @@ function displayPets(pets) {
 
     petsElement.innerHTML = pets.map(pet => `
         <div class="pet-card">
-            <img src="${getPetImage(pet.type, pet.breed)}" 
+            <img src="${getPetImage(pet.type, pet.breed, pet.name)}" 
                  alt="${pet.name}" 
                  onerror="this.src='https://via.placeholder.com/300x200/4ECDC4/white?text=Pet+${pet.name.split(' ').join('+')}'">
             <h3>${pet.name}</h3>
@@ -242,4 +242,5 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+
 
