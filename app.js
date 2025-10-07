@@ -142,9 +142,7 @@ function getPetImage(type, breed, petName) {
         "Bob": "images/bob-bulldog.jpg",
         "Lulu": "images/lulu-gata.jpg"
     };
-    
-    // Verifica se a imagem existe no mapa, caso contrário usa placeholder
-    return imageMap[petName] || `https://via.placeholder.com/300x200/4ECDC4/white?text=Pet+${petName}`;
+      return imageMap[petName] || `https://via.placeholder.com/300x200/4ECDC4/white?text=Pet+${petName}`;
 }
 
 function openCamera() {
@@ -242,6 +240,7 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+
 
 
 
