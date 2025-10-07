@@ -1,5 +1,7 @@
 const DOG_API_URL = 'https://api.thedogapi.com/v1/breeds';
 const CAT_API_URL = 'https://api.thecatapi.com/v1/breeds';
+const DOG_IMAGES_URL = 'https://api.thedogapi.com/v1/images/search?limit=10';
+const CAT_IMAGES_URL = 'https://api.thecatapi.com/v1/images/search?limit=10';
 
 const loadingElement = document.getElementById('loading');
 const errorElement = document.getElementById('error');
@@ -8,7 +10,6 @@ const petTypeSelect = document.getElementById('petType');
 const cameraModal = document.getElementById('cameraModal');
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
-
 
 const availablePets = [
     {
@@ -49,39 +50,26 @@ const availablePets = [
     }
 ];
 
-function getLocation() {
+let dogImagesCache = [];
+let catImagesCache = [];
+
+async function getLocation() {
     showLoading();
     
     if (!navigator.geolocation) {
         showError('Geolocalização não é suportada pelo seu navegador');
+        await fetchPetsFromAPI(null, null);
         return;
     }
 
     navigator.geolocation.getCurrentPosition(
         async (position) => {
             const { latitude, longitude } = position.coords;
-            await fetchPets(latitude, longitude);
+            await fetchPetsFromAPI(latitude, longitude);
         },
-        (error) => {
-            let errorMessage = 'Erro ao obter localização: ';
-            
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    errorMessage += 'Permissão negada pelo usuário';
-                    fetchPets(null, null);
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    errorMessage += 'Localização indisponível';
-                    fetchPets(null, null);
-                    break;
-                case error.TIMEOUT:
-                    errorMessage += 'Tempo de espera excedido';
-                    fetchPets(null, null);
-                    break;
-                default:
-                    errorMessage += 'Erro desconhecido';
-                    fetchPets(null, null);
-            }
+        async (error) => {
+            console.log('Usando localização padrão devido ao erro:', error);
+            await fetchPetsFromAPI(null, null);
         },
         {
             enableHighAccuracy: true,
@@ -91,25 +79,166 @@ function getLocation() {
     );
 }
 
-async function fetchPets(lat, lng) {
+async function fetchPetsFromAPI(lat, lng) {
     try {
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        showLoading();
         
-        const selectedType = petTypeSelect.value;
-        let filteredPets = availablePets;
-        
-        if (selectedType) {
-            filteredPets = availablePets.filter(pet => pet.type === selectedType);
-        }
-        
-        displayPets(filteredPets);
+        const [dogsData, catsData, dogImages, catImages] = await Promise.all([
+            fetchDogBreeds(),
+            fetchCatBreeds(),
+            fetchDogImages(),
+            fetchCatImages()
+        ]);
+
+        // Armazena imagens em cache
+        dogImagesCache = dogImages;
+        catImagesCache = catImages;
+
+        const apiPets = processAPIData(dogsData, catsData);
+        displayPets(apiPets);
         
     } catch (error) {
-        console.error('Erro ao buscar pets:', error);
-        showError('Erro ao carregar pets. Tente novamente.');
+        console.error('Erro ao buscar dados da API:', error);
+        console.log('Usando dados locais como fallback');
+        displayPets(availablePets);
     }
 }
 
+async function fetchDogBreeds() {
+    try {
+        const response = await fetch(DOG_API_URL);
+        if (!response.ok) throw new Error('Erro na API de cachorros');
+        return await response.json();
+    } catch (error) {
+        console.error('Erro ao buscar raças de cachorros:', error);
+        return [];
+    }
+}
+
+async function fetchCatBreeds() {
+    try {
+        const response = await fetch(CAT_API_URL);
+        if (!response.ok) throw new Error('Erro na API de gatos');
+        return await response.json();
+    } catch (error) {
+        console.error('Erro ao buscar raças de gatos:', error);
+        return [];
+    }
+}
+
+async function fetchDogImages() {
+    try {
+        const response = await fetch(DOG_IMAGES_URL);
+        if (!response.ok) throw new Error('Erro ao buscar imagens de cachorros');
+        return await response.json();
+    } catch (error) {
+        console.error('Erro ao buscar imagens de cachorros:', error);
+        return [];
+    }
+}
+
+async function fetchCatImages() {
+    try {
+        const response = await fetch(CAT_IMAGES_URL);
+        if (!response.ok) throw new Error('Erro ao buscar imagens de gatos');
+        return await response.json();
+    } catch (error) {
+        console.error('Erro ao buscar imagens de gatos:', error);
+        return [];
+    }
+}
+
+function processAPIData(dogs, cats) {
+    const processedPets = [];
+    
+    if (dogs && dogs.length > 0) {
+        dogs.slice(0, 2).forEach((dog, index) => {
+            processedPets.push({
+                id: dog.id,
+                name: dog.name || `Cachorro ${index + 1}`,
+                type: "dog",
+                breed: dog.name,
+                age: getRandomAge(),
+                location: getRandomLocation(),
+                distance: getRandomDistance(),
+                reference_image_id: dog.reference_image_id,
+                temperament: dog.temperament
+            });
+        });
+    }
+    
+    if (cats && cats.length > 0) {
+        cats.slice(0, 2).forEach((cat, index) => {
+            processedPets.push({
+                id: cat.id,
+                name: cat.name || `Gato ${index + 1}`,
+                type: "cat",
+                breed: cat.name,
+                age: getRandomAge(),
+                location: getRandomLocation(),
+                distance: getRandomDistance(),
+                reference_image_id: cat.reference_image_id
+            });
+        });
+    }
+    
+    return processedPets.length > 0 ? processedPets : availablePets;
+}
+
+function getPetImageFromAPI(pet) {
+    if (pet.type === 'dog') {
+        if (pet.reference_image_id) {
+            return `https://cdn2.thedogapi.com/images/${pet.reference_image_id}.jpg`;
+        }
+        const dogImage = dogImagesCache.find(img => img.breeds?.[0]?.id === pet.id);
+        if (dogImage) return dogImage.url;
+    } else {
+        // Para gatos
+        if (pet.reference_image_id) {
+            return `https://cdn2.thecatapi.com/images/${pet.reference_image_id}.jpg`;
+        }
+        const catImage = catImagesCache.find(img => img.breeds?.[0]?.id === pet.id);
+        if (catImage) return catImage.url;
+    }
+    
+    // Fallback final para imagens locais
+    return getLocalPetImage(pet.name);
+}
+
+function getLocalPetImage(petName) {
+    const imageMap = {
+        "Rick": "images/rick-golden.jpg",
+        "Lana": "images/lana-frajola.jpg", 
+        "Bob": "images/bob-bulldog.jpg",
+        "Lulu": "images/lulu.jpg"
+    };
+    
+    return imageMap[petName] || `https://via.placeholder.com/300x200/4ECDC4/white?text=Pet+${petName}`;
+}
+
+// Funções auxiliares para dados aleatórios
+function getRandomAge() {
+    const ages = ["1 ano", "2 anos", "3 anos", "4 anos", "5 anos"];
+    return ages[Math.floor(Math.random() * ages.length)];
+}
+
+function getRandomLocation() {
+    const locations = [
+        "Boa Viagem, PE", 
+        "Várzea, Recife", 
+        "Casa Amarela, Recife",
+        "Boa Vista, Recife",
+        "Pina, Recife"
+    ];
+    return locations[Math.floor(Math.random() * locations.length)];
+}
+
+function getRandomDistance() {
+    const distances = ["0.5 km", "1.2 km", "2.8 km", "3.5 km", "5 km", "7.2 km"];
+    return distances[Math.floor(Math.random() * distances.length)];
+}
+
+// FUNÇÕES ORIGINAIS DO SEU CÓDIGO (MANTIDAS)
 function displayPets(pets) {
     hideLoading();
     hideError();
@@ -121,11 +250,12 @@ function displayPets(pets) {
 
     petsElement.innerHTML = pets.map(pet => `
         <div class="pet-card">
-            <img src="${getPetImage(pet.type, pet.breed, pet.name)}" 
+            <img src="${getPetImageFromAPI(pet)}" 
                  alt="${pet.name}" 
-                 onerror="this.src='https://via.placeholder.com/300x200/4ECDC4/white?text=Pet+${pet.name.split(' ').join('+')}'">
+                 onerror="this.src='${getLocalPetImage(pet.name)}'">
             <h3>${pet.name}</h3>
             <p class="pet-info"><span class="pet-breed">${pet.breed}</span> - ${pet.age}</p>
+            ${pet.temperament ? `<p class="pet-info">🎭 ${pet.temperament.split(',').slice(0,2).join(', ')}</p>` : ''}
             <p class="pet-info">📍 ${pet.location}</p>
             <p class="pet-info">📏 ${pet.distance} de você</p>
             <button onclick="adoptPet('${pet.name}')" class="adopt-btn">
@@ -133,16 +263,11 @@ function displayPets(pets) {
             </button>
         </div>
     `).join('');
-}
-
-function getPetImage(type, breed, petName) {
-    const imageMap = {
-        "Rick": "images/rick-golden.jpg",
-        "Lana": "images/lana-frajola.jpg", 
-        "Bob": "images/bob-bulldog.jpg",
-        "Lulu": "images/lulu-gata.jpg"
-    };
-      return imageMap[petName] || `https://via.placeholder.com/300x200/4ECDC4/white?text=Pet+${petName}`;
+    
+    // Armazena pets da API para uso futuro
+    if (pets[0] && pets[0].reference_image_id) {
+        window.apiPets = pets;
+    }
 }
 
 function openCamera() {
@@ -203,44 +328,24 @@ function hideError() {
     errorElement.style.display = 'none';
 }
 
+
 document.querySelector('.close').addEventListener('click', closeCamera);
 
-document.addEventListener('DOMContentLoaded', getLocation);
-
-
-const style = document.createElement('style');
-style.textContent = `
-    .adopt-btn {
-        background: #FF6B6B;
-        color: white;
-        border: none;
-        padding: 12px 15px;
-        border-radius: 8px;
-        cursor: pointer;
-        margin-top: 10px;
-        width: 100%;
-        font-size: 1rem;
-        font-weight: bold;
-    }
+document.addEventListener('DOMContentLoaded', function() {
+    getLocation(); 
     
-    .adopt-btn:hover {
-        background: #ff5252;
-    }
-`;
-document.head.appendChild(style);
-
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-                console.log('SW registered: ', registration);
-            })
-            .catch(registrationError => {
-                console.log('SW registration failed: ', registrationError);
-            });
+    petTypeSelect.addEventListener('change', function() {
+        const selectedType = this.value;
+        let petsToShow = availablePets;
+        
+        if (window.apiPets && window.apiPets.length > 0) {
+            petsToShow = window.apiPets;
+        }
+        
+        if (selectedType) {
+            petsToShow = petsToShow.filter(pet => pet.type === selectedType);
+        }
+        
+        displayPets(petsToShow);
     });
-}
-
-
-
-
+});
