@@ -93,10 +93,12 @@ header p {
 
 .pet-card img {
     width: 100%;
-    height: 200px;
-    object-fit: cover;
+    height: 250px; 
+    object-fit: contain; 
+    object-position: center;
     border-radius: 10px;
     margin-bottom: 15px;
+    background: #f8f9fa; 
 }
 
 .pet-card h3 {
@@ -187,3 +189,21 @@ header p {
 .hidden {
     display: none !important;
 }
+
+.adopt-btn {
+    background: #FF6B6B;
+    color: white;
+    border: none;
+    padding: 12px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 10px;
+    width: 100%;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.adopt-btn:hover {
+    background: #ff5252;
+}
+
