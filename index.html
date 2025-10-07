@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PetFinder - Encontre seu novo amigo</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FF6B6B">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐾 PetFinder</h1>
+            <p>Encontre pets para adoção perto de você</p>
+        </header>
+
+        <main>
+            <div class="loading" id="loading">
+                <p>Buscando pets na sua região...</p>
+            </div>
+
+            <div class="error" id="error" style="display: none;">
+                <p>Não foi possível acessar sua localização</p>
+                <button onclick="getLocation()">Tentar Novamente</button>
+            </div>
+
+            <div class="filters">
+                <select id="petType">
+                    <option value="">Todos os pets</option>
+                    <option value="dog">Cachorros</option>
+                    <option value="cat">Gatos</option>
+                </select>
+                <button onclick="getLocation()" class="filter-btn">🔍 Buscar</button>
+            </div>
+
+            <div class="pets" id="pets">
+                <!-- Pets aparecerão aqui -->
+            </div>
+        </main>
+
+        <footer>
+            <button onclick="openCamera()" class="camera-btn">📷 Reportar Pet Perdido</button>
+        </footer>
+
+        <!-- Modal da Câmera -->
+        <div id="cameraModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Reportar Pet Perdido</h2>
+                <video id="video" autoplay></video>
+                <canvas id="canvas" style="display: none;"></canvas>
+                <div class="camera-controls">
+                    <button onclick="takePhoto()" class="capture-btn">📸 Tirar Foto</button>
+                    <button onclick="closeCamera()" class="cancel-btn">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
