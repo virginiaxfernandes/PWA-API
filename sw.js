@@ -7,7 +7,11 @@ const urlsToCache = [
     '/manifest.json',
     '/images/icon-72x72.jpg',
     '/images/icon-96x96.jpg',
-    '/images/icon-144x144.jp'
+    '/images/icon-144x144.jpg',
+    '/images/rick-golden.jpg',
+    '/images/lana-frajola.jpg',
+    '/images/bob-bulldog.jpg', 
+    '/images/lulu.jpg'
 ];
 
 self.addEventListener('install', event => {
@@ -20,6 +24,8 @@ self.addEventListener('install', event => {
 self.addEventListener('fetch', event => {
     event.respondWith(
         caches.match(event.request)
-            .then(response => response || fetch(event.request))
+            .then(response => {
+                return response || fetch(event.request);
+            })
     );
 });
