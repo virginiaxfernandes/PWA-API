@@ -1,7 +1,5 @@
 const DOG_API_URL = 'https://api.thedogapi.com/v1/breeds';
 const CAT_API_URL = 'https://api.thecatapi.com/v1/breeds';
-const DOG_IMAGES_URL = 'https://api.thedogapi.com/v1/images/search?limit=10';
-const CAT_IMAGES_URL = 'https://api.thecatapi.com/v1/images/search?limit=10';
 
 const loadingElement = document.getElementById('loading');
 const errorElement = document.getElementById('error');
@@ -19,7 +17,8 @@ const availablePets = [
         breed: "Golden Retriever",
         age: "3 anos",
         location: "Boa Viagem, PE",
-        distance: "5 km"
+        distance: "5 km",
+        image: "images/rick-golden.jpg"
     },
     {
         id: 2,
@@ -28,7 +27,8 @@ const availablePets = [
         breed: "Frajola",
         age: "2 anos", 
         location: "Várzea, Recife",
-        distance: "0.8 km"
+        distance: "0.8 km",
+        image: "images/lana-frajola.jpg"
     },
     {
         id: 3, 
@@ -37,7 +37,8 @@ const availablePets = [
         breed: "Bulldog Francês",
         age: "3 anos",
         location: "Casa Amarela, Recife",
-        distance: "10 km"
+        distance: "10 km",
+        image: "images/bob-bulldog.jpg"
     },
     {
         id: 4, 
@@ -46,30 +47,31 @@ const availablePets = [
         breed: "Tricolor",
         age: "2 anos",
         location: "Várzea, Recife", 
-        distance: "0.8 km"
+        distance: "0.8 km",
+        image: "images/lulu.jpg"
     }
 ];
 
-let dogImagesCache = [];
-let catImagesCache = [];
+let apiPets = [];
 
 async function getLocation() {
     showLoading();
     
     if (!navigator.geolocation) {
         showError('Geolocalização não é suportada pelo seu navegador');
-        await fetchPetsFromAPI(null, null);
+        await loadPets();
         return;
     }
 
     navigator.geolocation.getCurrentPosition(
         async (position) => {
             const { latitude, longitude } = position.coords;
-            await fetchPetsFromAPI(latitude, longitude);
+            console.log('📍 Localização obtida:', latitude, longitude);
+            await loadPets();
         },
         async (error) => {
-            console.log('Usando localização padrão devido ao erro:', error);
-            await fetchPetsFromAPI(null, null);
+            console.log('📍 Usando localização padrão:', error.message);
+            await loadPets();
         },
         {
             enableHighAccuracy: true,
@@ -79,130 +81,127 @@ async function getLocation() {
     );
 }
 
-async function fetchPetsFromAPI(lat, lng) {
+async function loadPets() {
     try {
-        showLoading();
-        
-        const [dogsData, catsData, dogImages, catImages] = await Promise.all([
-            fetchDogBreeds(),
-            fetchCatBreeds(),
-            fetchDogImages(),
-            fetchCatImages()
-        ]);
+        console.log('🔄 Buscando pets das APIs...');
 
-        dogImagesCache = dogImages;
-        catImagesCache = catImages;
-
-        const apiPets = processAPIData(dogsData, catsData);
-        displayPets(apiPets);
+        await fetchPetsFromAPI();
         
     } catch (error) {
-        console.error('Erro ao buscar dados da API:', error);
-        console.log('Usando dados locais como fallback');
+        console.error('❌ Erro ao carregar pets:', error);
         displayPets(availablePets);
     }
 }
 
-async function fetchDogBreeds() {
+async function fetchPetsFromAPI() {
     try {
-        const response = await fetch(DOG_API_URL);
-        if (!response.ok) throw new Error('Erro na API de cachorros');
-        return await response.json();
+        showLoading();
+        
+        console.log('🐕 Buscando cachorros...');
+        console.log('🐈 Buscando gatos...');
+        
+        const [dogsResponse, catsResponse] = await Promise.all([
+            fetch(DOG_API_URL).catch(e => { 
+                console.error('❌ Erro API cachorros:', e);
+                return { ok: false }; 
+            }),
+            fetch(CAT_API_URL).catch(e => { 
+                console.error('❌ Erro API gatos:', e); 
+                return { ok: false }; 
+            })
+        ]);
+
+        let dogs = [];
+        let cats = [];
+
+        if (dogsResponse.ok) {
+            dogs = await dogsResponse.json();
+            console.log(`✅ ${dogs.length} raças de cachorros carregadas`);
+        }
+
+        if (catsResponse.ok) {
+            cats = await catsResponse.json();
+            console.log(`✅ ${cats.length} raças de gatos carregadas`);
+        }
+
+        const petsFromAPI = convertAPIDataToPets(dogs, cats);
+        
+        if (petsFromAPI.length > 0) {
+            console.log(`🎉 ${petsFromAPI.length} pets carregados das APIs!`);
+            apiPets = petsFromAPI;
+            displayPets(petsFromAPI);
+        } else {
+            console.log('🔄 Nenhum dado da API, usando dados locais');
+            displayPets(availablePets);
+        }
+        
     } catch (error) {
-        console.error('Erro ao buscar raças de cachorros:', error);
-        return [];
+        console.error('❌ Erro geral na API:', error);
+        throw error;
     }
 }
 
-async function fetchCatBreeds() {
-    try {
-        const response = await fetch(CAT_API_URL);
-        if (!response.ok) throw new Error('Erro na API de gatos');
-        return await response.json();
-    } catch (error) {
-        console.error('Erro ao buscar raças de gatos:', error);
-        return [];
-    }
-}
+function convertAPIDataToPets(dogs, cats) {
+    const pets = [];
 
-async function fetchDogImages() {
-    try {
-        const response = await fetch(DOG_IMAGES_URL);
-        if (!response.ok) throw new Error('Erro ao buscar imagens de cachorros');
-        return await response.json();
-    } catch (error) {
-        console.error('Erro ao buscar imagens de cachorros:', error);
-        return [];
-    }
-}
-
-async function fetchCatImages() {
-    try {
-        const response = await fetch(CAT_IMAGES_URL);
-        if (!response.ok) throw new Error('Erro ao buscar imagens de gatos');
-        return await response.json();
-    } catch (error) {
-        console.error('Erro ao buscar imagens de gatos:', error);
-        return [];
-    }
-}
-
-function processAPIData(dogs, cats) {
-    const processedPets = [];
-    
     if (dogs && dogs.length > 0) {
-        dogs.slice(0, 2).forEach((dog, index) => {
-            processedPets.push({
-                id: dog.id,
-                name: dog.name || `Cachorro ${index + 1}`,
-                type: "dog",
-                breed: dog.name,
-                age: getRandomAge(),
-                location: getRandomLocation(),
-                distance: getRandomDistance(),
-                reference_image_id: dog.reference_image_id,
-                temperament: dog.temperament
-            });
-        });
+        const dogCount = Math.min(dogs.length, 2);
+        for (let i = 0; i < dogCount; i++) {
+            const dog = dogs[i];
+            if (dog && dog.name) {
+                pets.push({
+                    id: dog.id || Date.now() + i,
+                    name: dog.name.length > 10 ? dog.name.substring(0, 10) : dog.name,
+                    type: "dog",
+                    breed: dog.name,
+                    age: getRandomAge(),
+                    location: getRandomLocation(),
+                    distance: getRandomDistance(),
+                    temperament: dog.temperament,
+                    reference_image_id: dog.reference_image_id,
+                    isFromAPI: true
+                });
+            }
+        }
     }
     
     if (cats && cats.length > 0) {
-        cats.slice(0, 2).forEach((cat, index) => {
-            processedPets.push({
-                id: cat.id,
-                name: cat.name || `Gato ${index + 1}`,
-                type: "cat",
-                breed: cat.name,
-                age: getRandomAge(),
-                location: getRandomLocation(),
-                distance: getRandomDistance(),
-                reference_image_id: cat.reference_image_id
-            });
-        });
+        const catCount = Math.min(cats.length, 2);
+        for (let i = 0; i < catCount; i++) {
+            const cat = cats[i];
+            if (cat && cat.name) {
+                pets.push({
+                    id: cat.id || Date.now() + i + 1000,
+                    name: cat.name.length > 10 ? cat.name.substring(0, 10) : cat.name,
+                    type: "cat",
+                    breed: cat.name,
+                    age: getRandomAge(),
+                    location: getRandomLocation(),
+                    distance: getRandomDistance(),
+                    reference_image_id: cat.reference_image_id,
+                    isFromAPI: true
+                });
+            }
+        }
     }
     
-    return processedPets.length > 0 ? processedPets : availablePets;
+    console.log(`🔄 Convertidos ${pets.length} pets da API`);
+    return pets;
 }
 
-function getPetImageFromAPI(pet) {
-    if (pet.type === 'dog') {
-        if (pet.reference_image_id) {
+function getPetImage(pet) {
+    if (pet.isFromAPI && pet.reference_image_id) {
+        if (pet.type === 'dog') {
             return `https://cdn2.thedogapi.com/images/${pet.reference_image_id}.jpg`;
-        }
-        const dogImage = dogImagesCache.find(img => img.breeds?.[0]?.id === pet.id);
-        if (dogImage) return dogImage.url;
-    } else {
-        if (pet.reference_image_id) {
+        } else {
             return `https://cdn2.thecatapi.com/images/${pet.reference_image_id}.jpg`;
         }
-        const catImage = catImagesCache.find(img => img.breeds?.[0]?.id === pet.id);
-        if (catImage) return catImage.url;
+    }
+ 
+    if (pet.image) {
+        return pet.image;
     }
     
-    return getLocalPetImage(pet.name);
-}
-
-function getLocalPetImage(petName) {
     const imageMap = {
         "Rick": "images/rick-golden.jpg",
         "Lana": "images/lana-frajola.jpg", 
@@ -210,7 +209,7 @@ function getLocalPetImage(petName) {
         "Lulu": "images/lulu.jpg"
     };
     
-    return imageMap[petName] || `https://via.placeholder.com/300x200/4ECDC4/white?text=Pet+${petName}`;
+    return imageMap[pet.name] || `https://via.placeholder.com/300x200/4ECDC4/white?text=Pet+${pet.name}`;
 }
 
 function getRandomAge() {
@@ -238,6 +237,8 @@ function displayPets(pets) {
     hideLoading();
     hideError();
     
+    console.log(`🎨 Renderizando ${pets.length} pets...`);
+    
     if (pets.length === 0) {
         petsElement.innerHTML = '<div class="pet-card"><p>Nenhum pet encontrado na sua região.</p></div>';
         return;
@@ -245,23 +246,21 @@ function displayPets(pets) {
 
     petsElement.innerHTML = pets.map(pet => `
         <div class="pet-card">
-            <img src="${getPetImageFromAPI(pet)}" 
+            <img src="${getPetImage(pet)}" 
                  alt="${pet.name}" 
-                 onerror="this.src='${getLocalPetImage(pet.name)}'">
-            <h3>${pet.name}</h3>
+                 onerror="this.src='https://via.placeholder.com/300x200/4ECDC4/white?text=Pet+${pet.name}'"
+                 style="height: 200px; object-fit: cover; border-radius: 10px;">
+            <h3>${pet.name} ${pet.isFromAPI ? '🐾' : ''}</h3>
             <p class="pet-info"><span class="pet-breed">${pet.breed}</span> - ${pet.age}</p>
             ${pet.temperament ? `<p class="pet-info">🎭 ${pet.temperament.split(',').slice(0,2).join(', ')}</p>` : ''}
             <p class="pet-info">📍 ${pet.location}</p>
             <p class="pet-info">📏 ${pet.distance} de você</p>
+            ${pet.isFromAPI ? '<p class="pet-info" style="color: #4ECDC4; font-size: 0.8rem;">⭐ Dados em tempo real</p>' : ''}
             <button onclick="adoptPet('${pet.name}')" class="adopt-btn">
                 🏠 Quero Adotar
             </button>
         </div>
     `).join('');
-
-    if (pets[0] && pets[0].reference_image_id) {
-        window.apiPets = pets;
-    }
 }
 
 function openCamera() {
@@ -325,56 +324,39 @@ function hideError() {
 document.querySelector('.close').addEventListener('click', closeCamera);
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 PetFinder iniciado!');
     getLocation();
     
     petTypeSelect.addEventListener('change', function() {
         const selectedType = this.value;
         let petsToShow = availablePets;
-        
-        if (window.apiPets && window.apiPets.length > 0) {
-            petsToShow = window.apiPets;
+      
+        if (apiPets.length > 0) {
+            petsToShow = apiPets;
         }
         
         if (selectedType) {
             petsToShow = petsToShow.filter(pet => pet.type === selectedType);
         }
         
+        console.log(`🔍 Filtro aplicado: ${selectedType || 'todos'} - ${petsToShow.length} pets`);
         displayPets(petsToShow);
     });
 });
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-        console.log('🔄 Iniciando registro do Service Worker...');
- 
-        const swPath = '/PWA-API/sw.js';
-        
-        navigator.serviceWorker.register(swPath)
+        navigator.serviceWorker.register('sw.js')
             .then(registration => {
-                console.log('✅ Service Worker registrado com sucesso!');
-                console.log('📁 Escopo:', registration.scope);
-                
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    console.log('🔄 Nova versão do Service Worker encontrada!');
-                    
-                    newWorker.addEventListener('statechange', () => {
-                        console.log('📊 Estado do Service Worker:', newWorker.state);
-                    });
-                });
+                console.log('✅ Service Worker registrado:', registration.scope);
             })
             .catch(error => {
-                console.error('❌ Falha no registro do Service Worker:', error);
+                console.log('❌ Service Worker falhou:', error);
             });
     });
 }
 
-console.log('🔍 PWA PetFinder carregado!');
-console.log('📍 Geolocation:', !!navigator.geolocation);
-console.log('📷 MediaDevices:', !!navigator.mediaDevices);
-console.log('⚡ Service Worker:', !!navigator.serviceWorker);
-}
-
 console.log('🔍 Verificando PWA...');
 console.log('Service Worker:', navigator.serviceWorker ? 'Disponível' : 'Indisponível');
+
 
