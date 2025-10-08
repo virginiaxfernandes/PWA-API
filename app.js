@@ -345,18 +345,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-        console.log('🔄 Tentando registrar Service Worker...');
+        console.log('🔄 Iniciando registro do Service Worker...');
+ 
+        const swPath = '/PWA-API/sw.js';
         
-        navigator.serviceWorker.register('sw.js')
+        navigator.serviceWorker.register(swPath)
             .then(registration => {
                 console.log('✅ Service Worker registrado com sucesso!');
                 console.log('📁 Escopo:', registration.scope);
+                
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    console.log('🔄 Nova versão do Service Worker encontrada!');
+                    
+                    newWorker.addEventListener('statechange', () => {
+                        console.log('📊 Estado do Service Worker:', newWorker.state);
+                    });
+                });
             })
             .catch(error => {
-                console.log('❌ Falha no registro:', error);
+                console.error('❌ Falha no registro do Service Worker:', error);
             });
     });
 }
 
+console.log('🔍 PWA PetFinder carregado!');
+console.log('📍 Geolocation:', !!navigator.geolocation);
+console.log('📷 MediaDevices:', !!navigator.mediaDevices);
+console.log('⚡ Service Worker:', !!navigator.serviceWorker);
+}
+
 console.log('🔍 Verificando PWA...');
 console.log('Service Worker:', navigator.serviceWorker ? 'Disponível' : 'Indisponível');
+
