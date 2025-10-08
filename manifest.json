@@ -5,29 +5,27 @@
     "start_url": "/PWA-API/",
     "scope": "/PWA-API/",
     "display": "standalone",
-    "background_color": "#FF6B6B",
+    "background_color": "#FFFFFF",
     "theme_color": "#FF6B6B",
     "orientation": "portrait",
     "categories": ["lifestyle", "social"],
     "lang": "pt-BR",
     "icons": [
         {
-            "src": "images/icon-72x72.jpg",
+            "src": "/PWA-API/images/icon-72x72.jpg",
             "sizes": "72x72",
-            "type": "image/jpeg",
-            "purpose": "any maskable"
+            "type": "image/jpeg"
         },
         {
-            "src": "images/icon-96x96.jpg",
+            "src": "/PWA-API/images/icon-96x96.jpg",
             "sizes": "96x96",
-            "type": "image/jpeg",
-            "purpose": "any maskable"  // ✅ CORRIGIDO: remova as aspas extras
+            "type": "image/jpeg"
         },
         {
-            "src": "images/icon-144x144.jpg",
+            "src": "/PWA-API/images/icon-144x144.jpg",
             "sizes": "144x144",
-            "type": "image/jpeg",
-            "purpose": "any maskable"
+            "type": "image/jpeg"
         }
     ]
 }
+
