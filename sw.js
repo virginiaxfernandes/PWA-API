@@ -1,55 +1,30 @@
-const CACHE_NAME = 'petfinder-v2';
+const CACHE_NAME = 'petfinder-v1';
 const urlsToCache = [
-    './',
-    './index.html',
-    './style.css', 
-    './app.js',
-    './manifest.json',
-    './images/icon-72x72.jpg',
-    './images/icon-96x96.jpg',
-    './images/icon-144x144.jpg',
-    './images/rick-golden.jpg',
-    './images/lana-frajola.jpg',
-    './images/bob-bulldog.jpg', 
-    './images/lulu.jpg'
+    '/PWA-API/',
+    '/PWA-API/index.html',
+    '/PWA-API/style.css',
+    '/PWA-API/app.js',
+    '/PWA-API/manifest.json',
+    '/PWA-API/images/icon-72x72.jpg',
+    '/PWA-API/images/icon-96x96.jpg',
+    '/PWA-API/images/icon-144x144.jpg',
+    '/PWA-API/images/rick-golden.jpg',
+    '/PWA-API/images/lana-frajola.jpg',
+    '/PWA-API/images/bob-bulldog.jpg',
+    '/PWA-API/images/lulu.jpg'
 ];
 
 self.addEventListener('install', event => {
-    console.log('✅ Service Worker installing...');
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(cache => {
-                console.log('✅ Cache opened');
-                return cache.addAll(urlsToCache);
-            })
-            .catch(error => {
-                console.log('❌ Cache failed:', error);
-            })
-    );
-});
-
-self.addEventListener('activate', event => {
-    console.log('✅ Service Worker activating...');
-    event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cacheName => {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('✅ Deleting old cache:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        })
+            .then(cache => cache.addAll(urlsToCache))
     );
 });
 
 self.addEventListener('fetch', event => {
     event.respondWith(
         caches.match(event.request)
-            .then(response => {
-                return response || fetch(event.request);
-            })
+            .then(response => response || fetch(event.request))
     );
 });
 
