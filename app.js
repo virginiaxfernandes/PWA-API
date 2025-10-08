@@ -344,18 +344,36 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(registration => {
-                console.log('✅ Service Worker registrado com sucesso: ', registration);
-            })
-            .catch(registrationError => {
-                console.log('❌ Falha no registro do Service Worker: ', registrationError);
+    window.addEventListener('load', function() {
+        const swPaths = ['sw.js', './sw.js'];
+        
+        const tryRegisterSW = (path, index = 0) => {
+            navigator.serviceWorker.register(path)
+                .then(registration => {
+                    console.log('✅ Service Worker registrado: ', registration.scope);
+
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        console.log('🔄 Nova versão do Service Worker encontrada!');
+                    });
+                })
+                .catch(error => {
+                    console.log(`❌ Falha no caminho ${path}:`, error);
+                    
+                    if (index < swPaths.length - 1) {
+                        tryRegisterSW(swPaths[index + 1], index + 1);
+                    } else {
+                        console.log('❌ Todos os caminhos falharam');
+                    }
+                });
+        };
+        
+        tryRegisterSW(swPaths[0]);
+    });
+}
+                    .catch(error2 => {
+                        console.log('❌ Todos os caminhos falharam');
+                    });
             });
     });
 }
-    });
-});
-
-
-
